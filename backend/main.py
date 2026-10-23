@@ -4,6 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from config import settings
 from database import init_db
@@ -37,10 +38,23 @@ async def health():
     return {"status": "ok"}
 
 
+class SPAStaticFiles(StaticFiles):
+    """Serve index.html for unknown paths so client-side routes survive a refresh."""
+
+    async def get_response(self, path, scope):
+        try:
+            return await super().get_response(path, scope)
+        except StarletteHTTPException as exc:
+            # Real misses (API routes, missing asset files) should still 404.
+            if exc.status_code != 404 or path.startswith("api/") or "." in path.rsplit("/", 1)[-1]:
+                raise
+            return await super().get_response("index.html", scope)
+
+
 # Serve React build in production (Railway deployment)
 # Resolve path relative to this file so it works regardless of cwd
 _frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
 try:
-    app.mount("/", StaticFiles(directory=str(_frontend_dist), html=True), name="static")
+    app.mount("/", SPAStaticFiles(directory=str(_frontend_dist), html=True), name="static")
 except RuntimeError:
     pass  # frontend not built yet (dev mode)
