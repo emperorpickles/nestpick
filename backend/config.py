@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # On Railway a persistent volume is mounted at /data.
@@ -27,6 +28,16 @@ class Settings(BaseSettings):
         "http://localhost:4173",
         "http://localhost:8000",
     ]
+
+    @field_validator("database_url")
+    @classmethod
+    def _use_async_postgres_driver(cls, url: str) -> str:
+        # Heroku sets DATABASE_URL as postgres://...; SQLAlchemy's async engine needs asyncpg.
+        for prefix in ("postgres://", "postgresql://"):
+            if url.startswith(prefix):
+                url = "postgresql+asyncpg://" + url[len(prefix):]
+                return url.replace("sslmode=", "ssl=")
+        return url
 
 
 settings = Settings()

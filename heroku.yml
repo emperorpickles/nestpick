@@ -1,0 +1,9 @@
+# Heroku container deploy. Requires `heroku stack:set container` on the app.
+# Builds the same Dockerfile used on Railway; the CMD already binds to $PORT.
+setup:
+  addons:
+    - plan: heroku-postgresql
+      as: DATABASE
+build:
+  docker:
+    web: Dockerfile
