@@ -1,0 +1,18 @@
+# Dependencies and build output
+node_modules/
+frontend/dist/
+.vite/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local data and secrets
+*.db
+.env
+
+# OS / editor
+.DS_Store

@@ -5,3 +5,4 @@
 frontend/dist
 .git
 .env
+**/*.db
